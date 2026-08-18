@@ -1,2 +1,3 @@
 # HelloClient
-Компонент бокового меню:  React + TypeScript + Tailwind
+
+Компонент бокового меню: React + TypeScript + Tailwind
