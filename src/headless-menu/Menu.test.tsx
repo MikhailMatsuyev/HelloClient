@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createRef } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { Menu } from './index'
+import { Menu, useMenuSub } from './index'
 import { Slot } from './Slot'
 
 describe('Menu compound components', () => {
@@ -84,6 +84,170 @@ describe('Menu compound components', () => {
     expect(inventoryTrigger).toHaveAttribute('aria-expanded', 'false')
     expect(inventorySub).toHaveAttribute('data-state', 'closed')
     expect(screen.getByText('Inventory content')).toHaveAttribute('data-state', 'closed')
+  })
+
+  it('SubTrigger.aria-controls указывает на id SubContent (ARIA Disclosure pattern)', () => {
+    render(
+      <Menu.Root>
+        <Menu.Sub value="inventory">
+          <Menu.SubTrigger>Inventory</Menu.SubTrigger>
+          <Menu.SubContent>Inventory content</Menu.SubContent>
+        </Menu.Sub>
+      </Menu.Root>,
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Inventory' })
+    const content = screen.getByText('Inventory content')
+    expect(content.id).toBeTruthy()
+    expect(trigger).toHaveAttribute('aria-controls', content.id)
+  })
+
+  it('Escape закрывает открытое подменю и возвращает фокус на его SubTrigger', async () => {
+    const user = userEvent.setup()
+    render(
+      <Menu.Root>
+        <Menu.Sub value="inventory">
+          <Menu.SubTrigger>Inventory</Menu.SubTrigger>
+          <Menu.SubContent>
+            <Menu.Item>Products</Menu.Item>
+          </Menu.SubContent>
+        </Menu.Sub>
+      </Menu.Root>,
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Inventory' })
+    await user.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+
+    // Фокус ушёл вглубь открытого подменю (обычным Tab) — Escape должен сработать и оттуда.
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Products' })).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveFocus()
+  })
+
+  it('повторный Escape подряд не ломается — второй раз уже нечего закрывать', async () => {
+    const user = userEvent.setup()
+    render(
+      <Menu.Root>
+        <Menu.Sub value="inventory">
+          <Menu.SubTrigger>Inventory</Menu.SubTrigger>
+          <Menu.SubContent>Inventory content</Menu.SubContent>
+        </Menu.Sub>
+      </Menu.Root>,
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Inventory' })
+    await user.click(trigger)
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    expect(trigger).toHaveFocus()
+  })
+
+  it('Escape привязан к фокусу внутри своего Sub: не закрывает открытый раздел, если фокус ушёл в другой (закрытый) Sub', async () => {
+    const user = userEvent.setup()
+    render(
+      <Menu.Root>
+        <Menu.Sub value="inventory">
+          <Menu.SubTrigger>Inventory</Menu.SubTrigger>
+          <Menu.SubContent>Inventory content</Menu.SubContent>
+        </Menu.Sub>
+        <Menu.Sub value="clients">
+          <Menu.SubTrigger>Clients</Menu.SubTrigger>
+          <Menu.SubContent>Clients content</Menu.SubContent>
+        </Menu.Sub>
+      </Menu.Root>,
+    )
+
+    const inventoryTrigger = screen.getByRole('button', { name: 'Inventory' })
+    const clientsTrigger = screen.getByRole('button', { name: 'Clients' })
+
+    await user.click(inventoryTrigger)
+    expect(inventoryTrigger).toHaveAttribute('aria-expanded', 'true')
+
+    // Фокус переходит на триггер соседнего, закрытого Sub (например, обычным Tab).
+    clientsTrigger.focus()
+    await user.keyboard('{Escape}')
+
+    // Escape нажат не "внутри" открытого Inventory — тот остаётся открытым как есть.
+    expect(inventoryTrigger).toHaveAttribute('aria-expanded', 'true')
+    expect(clientsTrigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('SubTrigger.ref потребителя и внутренний ref (для фокуса по Escape) работают одновременно', async () => {
+    const user = userEvent.setup()
+    const ref = createRef<HTMLButtonElement>()
+
+    render(
+      <Menu.Root>
+        <Menu.Sub value="inventory">
+          <Menu.SubTrigger ref={ref}>Inventory</Menu.SubTrigger>
+          <Menu.SubContent>
+            <Menu.Item>Products</Menu.Item>
+          </Menu.SubContent>
+        </Menu.Sub>
+      </Menu.Root>,
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Inventory' })
+    // Внешний ref потребителя получил тот же DOM-узел, без asChild.
+    expect(ref.current).toBe(trigger)
+
+    await user.click(trigger)
+    await user.tab()
+    await user.keyboard('{Escape}')
+    // Возврат фокуса по Escape опирается на внутренний triggerRef — раз он сработал, оба рефа
+    // (внешний и внутренний) действительно указывают на один и тот же узел.
+    expect(trigger).toHaveFocus()
+  })
+
+  it('Escape не трогает уже закрытое подменю', async () => {
+    const user = userEvent.setup()
+    render(
+      <Menu.Root>
+        <Menu.Sub value="inventory">
+          <Menu.SubTrigger>Inventory</Menu.SubTrigger>
+          <Menu.SubContent>Inventory content</Menu.SubContent>
+        </Menu.Sub>
+      </Menu.Root>,
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Inventory' })
+    trigger.focus()
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('useMenuSub даёт close/toggle для кастомных элементов (например, кнопки закрытия bottom-sheet)', async () => {
+    const user = userEvent.setup()
+
+    function CustomCloseButton() {
+      const { close } = useMenuSub()
+      return <button onClick={close}>Close sheet</button>
+    }
+
+    render(
+      <Menu.Root>
+        <Menu.Sub value="clients">
+          <Menu.SubTrigger>Clients</Menu.SubTrigger>
+          <Menu.SubContent>
+            <CustomCloseButton />
+          </Menu.SubContent>
+        </Menu.Sub>
+      </Menu.Root>,
+    )
+
+    const trigger = screen.getByRole('button', { name: 'Clients' })
+    await user.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(screen.getByRole('button', { name: 'Close sheet' }))
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('Menu.Item рендерится автономно, без Menu.Root — ему не нужен стейт меню', () => {
@@ -195,6 +359,14 @@ describe('Menu compound components', () => {
         </Menu.Root>,
       ),
     ).toThrow(/Menu\.SubContent должен рендериться внутри <Menu\.Sub>/)
+
+    function ComponentUsingMenuSub() {
+      useMenuSub()
+      return null
+    }
+    expect(() => render(<ComponentUsingMenuSub />)).toThrow(
+      /Menu\.useMenuSub должен рендериться внутри <Menu\.Sub>/,
+    )
 
     consoleError.mockRestore()
   })
