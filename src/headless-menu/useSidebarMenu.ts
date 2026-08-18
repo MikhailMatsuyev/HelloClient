@@ -74,6 +74,11 @@ export function useSidebarMenu(options: UseSidebarMenuOptions = {}): UseSidebarM
     [openValue, setOpenValue],
   )
 
+  // Фокус при переключении между разделами намеренно не трогаем: когда аккордеон закрывает
+  // предыдущий открытый раздел из-за клика/Enter/Space на новом триггере, фокус и так уже стоит
+  // на новом триггере (это и есть источник события) — двигать его программно было бы лишним.
+  // Хук ничего не знает про DOM/фокус вообще; управляемый возврат фокуса при закрытии реализован
+  // отдельно, только для Escape, на уровне компонента Menu.Sub (см. src/headless-menu/Sub.tsx).
   const toggleSubmenu = useCallback(
     (value: string) => setOpenValue(openValue === value ? null : value),
     [openValue, setOpenValue],

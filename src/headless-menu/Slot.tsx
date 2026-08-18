@@ -1,5 +1,6 @@
 import { cloneElement, isValidElement } from 'react'
 import type { ReactElement, ReactNode, Ref } from 'react'
+import { mergeRefs } from './mergeRefs'
 
 type AnyProps = Record<string, unknown>
 
@@ -43,16 +44,6 @@ function mergeProps(slotProps: AnyProps, childProps: AnyProps): AnyProps {
   }
 
   return merged
-}
-
-function mergeRefs<T>(...refs: Array<Ref<T> | null | undefined>): Ref<T> {
-  return (node: T | null) => {
-    for (const ref of refs) {
-      if (ref == null) continue
-      if (typeof ref === 'function') ref(node)
-      else (ref as { current: T | null }).current = node
-    }
-  }
 }
 
 export interface SlotProps {

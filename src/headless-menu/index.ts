@@ -30,3 +30,4 @@ export type { UseSidebarMenuOptions, UseSidebarMenuResult } from './useSidebarMe
 
 export { useControllableState } from './useControllableState'
 export { useMatchMedia } from './useMatchMedia'
+export { useMenuSub } from './context'
