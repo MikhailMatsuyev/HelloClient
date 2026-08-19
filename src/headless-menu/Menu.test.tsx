@@ -250,6 +250,43 @@ describe('Menu compound components', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 
+  it('useMenuSub().openThis открывает именно этот раздел и закрывает ранее открытый другой (аккордеон)', async () => {
+    const user = userEvent.setup()
+
+    function OpenThisButton() {
+      const { openThis } = useMenuSub()
+      return <button onClick={openThis}>Open via hover-like action</button>
+    }
+
+    render(
+      <Menu.Root>
+        <Menu.Sub value="inventory">
+          <Menu.SubTrigger>Inventory</Menu.SubTrigger>
+          <Menu.SubContent>Inventory content</Menu.SubContent>
+        </Menu.Sub>
+        <Menu.Sub value="clients">
+          <Menu.SubTrigger>Clients</Menu.SubTrigger>
+          <Menu.SubContent>
+            <OpenThisButton />
+          </Menu.SubContent>
+        </Menu.Sub>
+      </Menu.Root>,
+    )
+
+    const inventoryTrigger = screen.getByRole('button', { name: 'Inventory' })
+    const clientsTrigger = screen.getByRole('button', { name: 'Clients' })
+
+    await user.click(inventoryTrigger)
+    expect(inventoryTrigger).toHaveAttribute('aria-expanded', 'true')
+
+    // openThis открывает Clients, даже если он ещё не был открыт (в отличие от toggle, который
+    // без предварительного открытия ничем не отличался бы от простого клика по триггеру).
+    await user.click(screen.getByRole('button', { name: 'Open via hover-like action' }))
+
+    expect(clientsTrigger).toHaveAttribute('aria-expanded', 'true')
+    expect(inventoryTrigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('Menu.Item рендерится автономно, без Menu.Root — ему не нужен стейт меню', () => {
     render(<Menu.Item>Standalone</Menu.Item>)
     expect(screen.getByRole('button', { name: 'Standalone' })).toBeInTheDocument()
