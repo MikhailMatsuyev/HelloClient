@@ -98,8 +98,11 @@ export function Sidebar({ collapsed, setCollapsed, openValue, setOpenValue }: Si
         />
       </Menu.List>
 
+      {/* self-start — иначе Menu.Toggle растянулся бы на всю ширину колонки (Menu.Root это
+          flex-col, cross-axis по умолчанию stretch), и рамка вокруг стрелки оказалась бы
+          посередине, а не слева, как в макете. */}
       <Menu.Toggle
-        className="m-2 flex items-center justify-center rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        className="m-2 flex w-fit items-center justify-center self-start rounded-md border border-slate-300 p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
         aria-label={collapsed ? 'Развернуть меню' : 'Свернуть меню'}
       >
         <CollapseIcon className={`h-5 w-5 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
