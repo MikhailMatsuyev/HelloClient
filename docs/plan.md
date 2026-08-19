@@ -203,23 +203,48 @@ md:flex`/`md:hidden`), но делят один React-стейт `openValue` ч�
       (`tsc -b && vite build`, 43 модуля, без ошибок).
 - [x] GitHub Actions workflow (`lint` + `typecheck` + `test` на push/PR) — уже был настроен в
       шаге 1 (`.github/workflows/ci.yml`), здесь только сверили, что покрывает всё нужное.
-- [ ] (Опционально) Один e2e-смоук на Playwright поверх задеплоенного демо: ресайз вьюпорта →
-      проверка переключения узкий/широкий режим. Не приоритет, если не хватает времени.
+- [x] E2e на `@playwright/test` (`playwright.config.ts`, `e2e/adaptive.spec.ts`) — то, что
+      vitest+jsdom принципиально не может проверить: реальные CSS media queries и реальный
+      localStorage, переживающий перезагрузку страницы в браузере. Два теста: переключение
+      десктопный сайдбар ⇄ мобильный таб-бар по реальному ресайзу вьюпорта; persist `collapsed`
+      через настоящий `page.reload()`. Отдельный npm-скрипт `test:e2e` + `test:all` (vitest + e2e
+      одной командой) и отдельный джоб `e2e` в `ci.yml` (запускается только после успешного
+      `build`, чтобы не тратить CI-минуты на заведомо сломанную ветку; HTML-отчёт как artifact
+      при падении).
 - [x] Настроен деплой на GitHub Pages: `vite.config.ts` — `base: '/HelloClient/'` (проектный
       репозиторий отдаёт сайт с подпути, без этого ассеты 404-лись бы в проде); отдельный workflow
       `.github/workflows/deploy.yml` (build → `actions/upload-pages-artifact` →
       `actions/deploy-pages`, триггер на push в `main` + ручной `workflow_dispatch`). Локально
       проверено `vite preview` под `/HelloClient/` — HTML/JS/CSS резолвятся, все ассеты отдают 200.
-      **Открытый пункт**: включить Pages для репозитория (Settings → Pages → Build and
-      deployment → Source: "GitHub Actions") — разовая ручная настройка в самом GitHub, без
-      `gh`-CLI/токена в `docs/credentials.local.md` сделать это программно не вышло; после мёрджа
-      этой ветки в `main` первый прогон workflow должен задеплоить сайт автоматически.
-- [ ] Проверить работоспособность демо-ссылки в чистом окне браузера — после того, как включат
-      Pages и отработает первый деплой.
+      Pages включён пользователем вручную (Settings → Pages → Source: "GitHub Actions"), workflow
+      отработал на мёрдже в `main`.
+- [x] Проверить работоспособность демо-ссылки в чистом окне браузера — проверено через Playwright
+      MCP на https://mikhailmatsuyev.github.io/HelloClient/: редирект `/` → `/#/trends`, иконки и
+      стили на месте, клик по Inventory открывает flyout с Products/Orders/Suppliers — идентично
+      локальной сборке.
 
 ## 7. Финальная проверка и сдача
 
-- [ ] Сверить реализацию с чек-листом требований из CLAUDE.md (React+TS+Tailwind, только JSX-API,
-      controlled state, настоящий headless, React Router только в потребителе, комментарии, адаптив).
-- [ ] Обновить корневой README.md (описание, ссылка на демо, инструкция запуска).
-- [ ] Запушить код в GitHub, приложить ссылку на демо в описание репозитория/README.
+Ветка `docs/final-readme-and-review`.
+
+- [x] Сверить реализацию с чек-листом требований из CLAUDE.md:
+  - React + TypeScript + Tailwind — да.
+  - Логика соответствует видео и макетам — да (детальная сверка в шаге 0, реализация в шагах 2-4).
+  - Только JSX-композиция, никаких JSON/JS-конфигов — да; `grep -rn "\.map(" src/demo` пустой
+    (даже в потребителе меню собрано вручную JSX, не из массива), в `src/headless-menu` тем более
+    нет ни одного API, принимающего конфиг пунктов.
+  - Controlled/uncontrolled API — да (`useControllableState`, применён везде: `collapsed`,
+    `openValue`).
+  - Настоящий headless (без стилей) — да; `grep -rn "className=" src/headless-menu --include=*.tsx`
+    находит совпадения только в `Menu.test.tsx` (проверка мерджа classNames через `Slot`), не в
+    самой логике.
+  - React Router только в потребителе — да; `grep -rn "react-router" src/headless-menu` находит
+    упоминание только в тексте `README.md` (в контексте "этого здесь нет"), не в коде.
+  - Комментарии в коде — да, во всех 12 не-тестовых файлах `src/headless-menu` есть doc-комментарии
+    к ключевым решениям.
+  - Адаптив/мобильный режим — да (широкий/узкий десктоп + мобильный bottom-sheet, см. шаг 4).
+- [x] Обновить корневой README.md — описание, ссылка на живое демо, инструкция запуска и всех
+      npm-скриптов, ссылки на `docs/plan.md` и `src/headless-menu/README.md`.
+- [ ] Запушить код в GitHub, приложить ссылку на демо в описание репозитория/README — README готов,
+      осталось смёрджить эту ветку и (по желанию) добавить ссылку на демо в описание репозитория
+      на GitHub (поле "About" в шапке репозитория — это уже не про код, руками в UI).

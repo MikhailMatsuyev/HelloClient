@@ -35,5 +35,11 @@ Thumbs.db
 # Vite
 .vite/
 
+# Playwright (e2e)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Приватные данные (пароли, доступы) — см. docs/credentials.local.md
 docs/credentials.local.md
