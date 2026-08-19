@@ -39,13 +39,22 @@ export function useSidebarMenuSubContext(componentName: string): SidebarMenuSubC
  * Menu.SubTrigger. Должен вызываться внутри дерева <Menu.Sub>.
  */
 export function useMenuSub() {
-  const { value, open } = useSidebarMenuSubContext('useMenuSub')
-  const { closeSubmenu, toggleSubmenu } = useSidebarMenuRootContext('useMenuSub')
+  const { value, open, triggerRef, contentId } = useSidebarMenuSubContext('useMenuSub')
+  const { openSubmenu, closeSubmenu, toggleSubmenu } = useSidebarMenuRootContext('useMenuSub')
 
   return {
     value,
     open,
+    /** Открывает именно этот раздел (аккордеон сам закроет ранее открытый другой). */
+    openThis: () => openSubmenu(value),
     close: () => closeSubmenu(value),
     toggle: () => toggleSubmenu(value),
+    /**
+     * Для полностью кастомного триггера (не Menu.SubTrigger): проставить этот ref на свой
+     * элемент, иначе возврат фокуса по Escape (см. Sub.tsx) будет некуда наводить.
+     */
+    triggerRef,
+    /** aria-controls на кастомном триггере должен указывать сюда же, что и id у Menu.SubContent. */
+    contentId,
   }
 }
