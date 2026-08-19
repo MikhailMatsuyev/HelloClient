@@ -184,8 +184,16 @@ md:flex`/`md:hidden`), но делят один React-стейт `openValue` ч�
 
 ## 5. Комментарии и документация в коде
 
-- [ ] Комментарии к ключевым местам headless-логики (почему, а не что).
-- [ ] Короткий README для `src/headless-menu` с примером использования.
+Ветка `docs/headless-menu-readme`.
+
+- [x] Комментарии к ключевым местам headless-логики (почему, а не что) — писались по ходу
+      реализации в шагах 2-4, здесь только сверили: во всех 12 не-тестовых файлах
+      `src/headless-menu/*.ts(x)` есть содержательный doc-комментарий.
+- [x] Короткий README для `src/headless-menu` (`src/headless-menu/README.md`): быстрый старт,
+      таблица компонентов, controlled/uncontrolled, хуки без компонентов (`useSidebarMenu`,
+      `useMenuSub`, `useMatchMedia`, `useControllableState`), `data-*`-конвенция для стилизации,
+      явный список того, что осознанно не входит в пакет (стили, роутер, persist, roving tabindex)
+      со ссылкой на обоснование в шаге 3.
 
 ## 6. Сборка, CI и деплой демо
 
