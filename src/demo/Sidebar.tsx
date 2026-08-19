@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import { Menu, useMenuSub } from '../headless-menu'
 import { ROUTES } from './routes'
@@ -67,6 +68,7 @@ export function Sidebar({ collapsed, setCollapsed, openValue, setOpenValue }: Si
           label="Clients"
           collapsed={collapsed}
           routePrefix={ROUTES.clients}
+          openValue={openValue}
           setOpenValue={setOpenValue}
         >
           <SidebarSubLink to={ROUTES.clientsList} label="List" />
@@ -80,6 +82,7 @@ export function Sidebar({ collapsed, setCollapsed, openValue, setOpenValue }: Si
           label="Inventory"
           collapsed={collapsed}
           routePrefix={ROUTES.inventory}
+          openValue={openValue}
           setOpenValue={setOpenValue}
         >
           <SidebarSubLink to={ROUTES.inventoryProducts} label="Products" />
@@ -137,6 +140,7 @@ interface SidebarSubmenuProps {
   collapsed: boolean
   /** Префикс роутов дочерних пунктов — по нему определяем "содержит ли раздел активную страницу". */
   routePrefix: string
+  openValue: string | null
   setOpenValue: (value: string | null) => void
   children: ReactNode
 }
@@ -147,31 +151,64 @@ function SidebarSubmenu({
   label,
   collapsed,
   routePrefix,
+  openValue,
   setOpenValue,
   children,
 }: SidebarSubmenuProps) {
   const { pathname } = useLocation()
   const hasActiveDescendant = pathname === routePrefix || pathname.startsWith(`${routePrefix}/`)
 
+  // "Hover intent" с отложенным закрытием: Menu.Sub — обычный блочный <div>, его bounding box
+  // не расширяется абсолютно спозиционированным flyout'ом (CSS так не работает — position:
+  // absolute вынимает элемент из потока и не влияет на размер родителя). Значит, ведя курсор от
+  // триггера к flyout'у, он неизбежно на миг покидает bounding box триггера ДО того, как попадёт
+  // на flyout — мгновенное закрытие по mouseleave (как было раньше) убивало flyout ровно в этот
+  // момент, не давая до него доехать. Поэтому закрытие теперь не мгновенное: schedule на таймере,
+  // отменяется, если курсор за это время добрался и до триггера, и до самого flyout'а (у обоих
+  // свой mouseenter → cancel). Тот же паттерн, что в реальных hover-меню (Radix, Floating UI и т.п.).
+  const closeTimeoutRef = useRef<number | null>(null)
+
+  // Отдельный ref-снимок openValue: колбэк внутри setTimeout иначе закрыл бы себя же поверх
+  // раздела, который успел стать открытым за эти 200мс другим путём (клик/hover на другой Sub) —
+  // classic stale closure. Проверяем самый свежий openValue на момент срабатывания таймера,
+  // а не тот, что был закрыт в замыкании при вызове scheduleClose.
+  const openValueRef = useRef(openValue)
+  useEffect(() => {
+    openValueRef.current = openValue
+  }, [openValue])
+
+  const cancelScheduledClose = () => {
+    if (closeTimeoutRef.current !== null) {
+      window.clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+  }
+
+  const scheduleClose = () => {
+    cancelScheduledClose()
+    closeTimeoutRef.current = window.setTimeout(() => {
+      if (openValueRef.current === value) {
+        setOpenValue(null)
+      }
+    }, 200)
+  }
+
+  useEffect(() => cancelScheduledClose, [])
+
   return (
-    <Menu.Sub
-      value={value}
-      className="relative"
-      // Hover открывает flyout (см. SidebarSubmenuTrigger), но ничего его не закрывало, если
-      // курсор просто уводили в сторону, не наводя на соседний раздел, — flyout оставался
-      // раскрытым до бесконечности. onMouseLeave — на всём Menu.Sub (не только на триггере):
-      // mouseleave не всплывает и не сработает, пока курсор двигается с триггера на сам flyout
-      // (он DOM-потомок Menu.Sub, хоть и абсолютно спозиционирован визуально в стороне).
-      onMouseLeave={collapsed ? () => setOpenValue(null) : undefined}
-    >
+    <Menu.Sub value={value} className="relative">
       <SidebarSubmenuTrigger
         icon={icon}
         label={label}
         collapsed={collapsed}
         active={hasActiveDescendant}
+        onHoverStart={collapsed ? cancelScheduledClose : undefined}
+        onHoverEnd={collapsed ? scheduleClose : undefined}
       />
 
       <Menu.SubContent
+        onMouseEnter={collapsed ? cancelScheduledClose : undefined}
+        onMouseLeave={collapsed ? scheduleClose : undefined}
         className={
           collapsed
             ? // Узкий режим: flyout справа от иконки. data-state=open отражает и клик, и hover
@@ -196,6 +233,10 @@ interface SidebarSubmenuTriggerProps {
   /** Содержит ли раздел текущую активную страницу — персистентный сигнал, независимый от того,
    *  открыт ли сейчас flyout (тот гаснет, стоит навести мышь на соседний раздел). */
   active: boolean
+  /** Отменить отложенное закрытие flyout'а (см. SidebarSubmenu) — курсор снова над триггером. */
+  onHoverStart?: () => void
+  /** Запланировать закрытие flyout'а — курсор ушёл с триггера (возможно, к самому flyout'у). */
+  onHoverEnd?: () => void
 }
 
 /**
@@ -205,7 +246,14 @@ interface SidebarSubmenuTriggerProps {
  * всегда сначала входит в элемент, потом кликает), поэтому в узком режиме click должен ТОЛЬКО
  * открывать (idempotent, как и hover), а не toggle. useMenuSub() — ровно для таких случаев.
  */
-function SidebarSubmenuTrigger({ icon, label, collapsed, active }: SidebarSubmenuTriggerProps) {
+function SidebarSubmenuTrigger({
+  icon,
+  label,
+  collapsed,
+  active,
+  onHoverStart,
+  onHoverEnd,
+}: SidebarSubmenuTriggerProps) {
   const { open, openThis, toggle, triggerRef, contentId } = useMenuSub()
 
   return (
@@ -217,7 +265,15 @@ function SidebarSubmenuTrigger({ icon, label, collapsed, active }: SidebarSubmen
       title={collapsed ? label : undefined}
       aria-expanded={open}
       aria-controls={contentId}
-      onMouseEnter={collapsed ? openThis : undefined}
+      onMouseEnter={
+        collapsed
+          ? () => {
+              onHoverStart?.()
+              openThis()
+            }
+          : undefined
+      }
+      onMouseLeave={collapsed ? onHoverEnd : undefined}
       onClick={collapsed ? openThis : toggle}
       data-state={open ? 'open' : 'closed'}
       // data-active — персистентный сигнал "содержит активную страницу", независимый от data-state

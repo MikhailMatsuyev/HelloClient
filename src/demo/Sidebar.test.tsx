@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { useState } from 'react'
@@ -121,13 +121,58 @@ describe('Sidebar', () => {
       'true',
     )
 
-    // Курсор уходит совсем в сторону (не на соседний SubTrigger) — без onMouseLeave на Menu.Sub
-    // flyout остался бы раскрытым навсегда.
+    // Курсор уходит совсем в сторону (не на триггер и не на сам flyout) — без hover-intent
+    // закрытия flyout остался бы раскрытым навсегда. Закрытие отложено (см. SidebarSubmenu),
+    // поэтому ждём его через waitFor, а не проверяем синхронно сразу после unhover.
     await user.unhover(screen.getByRole('button', { name: 'Inventory' }))
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Inventory' })).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      )
+    })
+  })
+
+  it('flyout, открытый по hover, не закрывается, пока курсор движется с триггера прямо на сам flyout', async () => {
+    const user = userEvent.setup()
+    renderSidebar({ collapsed: true })
+
+    await user.hover(screen.getByRole('button', { name: 'Inventory' }))
+    // Курсор "доехал" до пункта внутри flyout — это должно отменить отложенное закрытие точно
+    // так же, как повторное наведение на сам триггер. Раньше (mouseleave прямо на Menu.Sub) это
+    // было физически невозможно: flyout вне bounding box родителя, событие срабатывало раньше.
+    await user.hover(screen.getByRole('link', { name: 'Products' }))
+
+    // Ждём дольше, чем задержка закрытия (200мс) — flyout должен остаться открытым.
+    await new Promise((resolve) => setTimeout(resolve, 300))
     expect(screen.getByRole('button', { name: 'Inventory' })).toHaveAttribute(
       'aria-expanded',
-      'false',
+      'true',
     )
+
+    await user.click(screen.getByRole('link', { name: 'Products' }))
+    expect(screen.getByRole('link', { name: 'Products' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('отложенное закрытие одного раздела не закрывает другой, успевший открыться за это время', async () => {
+    const user = userEvent.setup()
+    renderSidebar({ collapsed: true })
+
+    await user.hover(screen.getByRole('button', { name: 'Inventory' }))
+    expect(screen.getByRole('button', { name: 'Inventory' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+
+    // Уходим на Clients быстро (успевает сработать до 200мс таймера Inventory) — Clients
+    // открывается сразу же (см. openThis), но отложенное закрытие от Inventory всё ещё "в полёте".
+    await user.hover(screen.getByRole('button', { name: 'Clients' }))
+    expect(screen.getByRole('button', { name: 'Clients' })).toHaveAttribute('aria-expanded', 'true')
+
+    // Ждём дольше 200мс — если бы таймер Inventory не проверял актуальный openValue (stale
+    // closure), он сбросил бы его в null поверх уже легитимно открытого Clients.
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    expect(screen.getByRole('button', { name: 'Clients' })).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('в свёрнутом режиме подписи скрыты, но остаётся доступное имя через title', () => {
