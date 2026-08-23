@@ -168,12 +168,21 @@ function GroupContent({ label, collapsed, contentClassName, children }: GroupCon
       ].join(' ')
     : ['ml-4 space-y-1 border-l border-slate-200 pl-3', open ? 'mt-1' : 'hidden'].join(' ')
 
+  const resolvedContentClassName = contentClassName
+    ? [
+        contentClassName,
+        open
+          ? 'visible opacity-100 pointer-events-auto'
+          : 'invisible opacity-0 pointer-events-none',
+      ].join(' ')
+    : defaultContentClassName
+
   return (
     <Menu.SubContent
       id={contentId}
       onMouseEnter={collapsed ? cancelScheduledClose : undefined}
       onMouseLeave={collapsed ? scheduleClose : undefined}
-      className={contentClassName ?? defaultContentClassName}
+      className={resolvedContentClassName}
     >
       {collapsed && <div className="px-2 py-1 text-xs font-semibold text-slate-900">{label}</div>}
 
