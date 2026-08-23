@@ -44,7 +44,7 @@ Business layer
 - [ *] Desktop collapsed flyout работает
 - [ *] Hover intent и delayed close работают
 - [ *] Переход курсора с trigger на flyout не закрывает меню
-- [ ] `Escape` закрывает группу и возвращает focus
+- [* ] `Escape` закрывает группу и возвращает focus
 - [ ] Mobile bottom-sheet работает
 - [ ] Backdrop закрывает sheet
 - [ ] Close button закрывает sheet

@@ -22,12 +22,20 @@ export interface RouterMenuGroupProps {
   children: ReactNode
   icon?: ReactNode
   className?: string
+  triggerClassName?: string
+  contentClassName?: string
 }
 
-export function Group({ label, children, icon, className }: RouterMenuGroupProps) {
+export function Group({
+  label,
+  children,
+  icon,
+  className,
+  triggerClassName,
+  contentClassName,
+}: RouterMenuGroupProps) {
   const { pathname } = useRouterMenuContext('Group')
   const { collapsed } = useSidebarMenuRootContext('Group')
-
   const value = useId()
 
   const childRoutes = Children.toArray(children)
@@ -39,9 +47,15 @@ export function Group({ label, children, icon, className }: RouterMenuGroupProps
 
   return (
     <Menu.Sub value={value} className={className}>
-      <GroupTrigger label={label} icon={icon} collapsed={collapsed} active={active} />
+      <GroupTrigger
+        label={label}
+        icon={icon}
+        collapsed={collapsed}
+        active={active}
+        triggerClassName={triggerClassName}
+      />
 
-      <GroupContent label={label} collapsed={collapsed}>
+      <GroupContent label={label} collapsed={collapsed} contentClassName={contentClassName}>
         {children}
       </GroupContent>
     </Menu.Sub>
@@ -53,9 +67,10 @@ interface GroupTriggerProps {
   icon?: ReactNode
   collapsed: boolean
   active: boolean
+  triggerClassName?: string
 }
 
-function GroupTrigger({ label, icon, collapsed, active }: GroupTriggerProps) {
+function GroupTrigger({ label, icon, collapsed, active, triggerClassName }: GroupTriggerProps) {
   const { open, openThis, toggle, triggerRef, contentId } = useMenuSub()
 
   const handleMouseEnter = () => {
@@ -73,7 +88,7 @@ function GroupTrigger({ label, icon, collapsed, active }: GroupTriggerProps) {
     toggle()
   }
 
-  const triggerClassName = [
+  const defaultTriggerClassName = [
     'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm',
     'hover:bg-slate-100',
     active
@@ -96,7 +111,7 @@ function GroupTrigger({ label, icon, collapsed, active }: GroupTriggerProps) {
       data-active={active ? '' : undefined}
       onMouseEnter={handleMouseEnter}
       onClick={handleClick}
-      className={triggerClassName}
+      className={triggerClassName ?? defaultTriggerClassName}
     >
       {icon && <span className={iconClassName}>{icon}</span>}
 
@@ -108,10 +123,11 @@ function GroupTrigger({ label, icon, collapsed, active }: GroupTriggerProps) {
 interface GroupContentProps {
   label: string
   collapsed: boolean
+  contentClassName?: string
   children: ReactNode
 }
 
-function GroupContent({ label, collapsed, children }: GroupContentProps) {
+function GroupContent({ label, collapsed, contentClassName, children }: GroupContentProps) {
   const { open, close, contentId } = useMenuSub()
 
   const closeTimeoutRef = useRef<number | null>(null)
@@ -143,7 +159,7 @@ function GroupContent({ label, collapsed, children }: GroupContentProps) {
     }, 200)
   }
 
-  const contentClassName = collapsed
+  const defaultContentClassName = collapsed
     ? [
         'absolute top-0 left-full z-10 ml-2 w-48 space-y-1',
         'rounded-lg border border-slate-200 bg-white p-2 shadow-lg',
@@ -157,7 +173,7 @@ function GroupContent({ label, collapsed, children }: GroupContentProps) {
       id={contentId}
       onMouseEnter={collapsed ? cancelScheduledClose : undefined}
       onMouseLeave={collapsed ? scheduleClose : undefined}
-      className={contentClassName}
+      className={contentClassName ?? defaultContentClassName}
     >
       {collapsed && <div className="px-2 py-1 text-xs font-semibold text-slate-900">{label}</div>}
 
