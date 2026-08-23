@@ -18,6 +18,7 @@ interface RouterMenuItemForMatching {
 }
 
 export interface RouterMenuGroupProps {
+  value?: string
   label: string
   children: ReactNode
   icon?: ReactNode
@@ -27,6 +28,7 @@ export interface RouterMenuGroupProps {
 }
 
 export function Group({
+  value: explicitValue,
   label,
   children,
   icon,
@@ -36,7 +38,9 @@ export function Group({
 }: RouterMenuGroupProps) {
   const { pathname } = useRouterMenuContext('Group')
   const { collapsed } = useSidebarMenuRootContext('Group')
-  const value = useId()
+
+  const generatedValue = useId()
+  const value = explicitValue ?? generatedValue
 
   const childRoutes = Children.toArray(children)
     .filter(isValidElement)
@@ -47,35 +51,86 @@ export function Group({
 
   return (
     <Menu.Sub value={value} className={className}>
-      <GroupTrigger
+      <GroupBody
         label={label}
         icon={icon}
         collapsed={collapsed}
         active={active}
         triggerClassName={triggerClassName}
-      />
-
-      <GroupContent label={label} collapsed={collapsed} contentClassName={contentClassName}>
+        contentClassName={contentClassName}
+      >
         {children}
-      </GroupContent>
+      </GroupBody>
     </Menu.Sub>
   )
 }
 
-interface GroupTriggerProps {
+interface GroupBodyProps {
   label: string
   icon?: ReactNode
   collapsed: boolean
   active: boolean
   triggerClassName?: string
+  contentClassName?: string
+  children: ReactNode
 }
 
-function GroupTrigger({ label, icon, collapsed, active, triggerClassName }: GroupTriggerProps) {
-  const { open, openThis, toggle, triggerRef, contentId } = useMenuSub()
+function GroupBody({
+  label,
+  icon,
+  collapsed,
+  active,
+  triggerClassName,
+  contentClassName,
+  children,
+}: GroupBodyProps) {
+  const { open, openThis, close, toggle, triggerRef, contentId, value } = useMenuSub()
+
+  const { openValue } = useSidebarMenuRootContext('Group')
+  const openValueRef = useRef(openValue)
+  const closeTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    openValueRef.current = openValue
+  }, [openValue])
+
+  useEffect(() => {
+    return () => {
+      if (closeTimeoutRef.current !== null) {
+        window.clearTimeout(closeTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const cancelScheduledClose = () => {
+    if (closeTimeoutRef.current !== null) {
+      window.clearTimeout(closeTimeoutRef.current)
+      closeTimeoutRef.current = null
+    }
+  }
+
+  const scheduleClose = () => {
+    cancelScheduledClose()
+
+    closeTimeoutRef.current = window.setTimeout(() => {
+      if (openValueRef.current === value) {
+        close()
+      }
+
+      closeTimeoutRef.current = null
+    }, 200)
+  }
 
   const handleMouseEnter = () => {
     if (collapsed) {
+      cancelScheduledClose()
       openThis()
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (collapsed) {
+      scheduleClose()
     }
   }
 
@@ -100,65 +155,6 @@ function GroupTrigger({ label, icon, collapsed, active, triggerClassName }: Grou
 
   const iconClassName = active || open ? 'shrink-0 text-blue-600' : 'shrink-0 text-slate-500'
 
-  return (
-    <button
-      ref={triggerRef as RefObject<HTMLButtonElement>}
-      type="button"
-      title={collapsed ? label : undefined}
-      aria-expanded={open}
-      aria-controls={contentId}
-      data-state={open ? 'open' : 'closed'}
-      data-active={active ? '' : undefined}
-      onMouseEnter={handleMouseEnter}
-      onClick={handleClick}
-      className={triggerClassName ?? defaultTriggerClassName}
-    >
-      {icon && <span className={iconClassName}>{icon}</span>}
-
-      {!collapsed && <span className="text-left">{label}</span>}
-    </button>
-  )
-}
-
-interface GroupContentProps {
-  label: string
-  collapsed: boolean
-  contentClassName?: string
-  children: ReactNode
-}
-
-function GroupContent({ label, collapsed, contentClassName, children }: GroupContentProps) {
-  const { open, close, contentId } = useMenuSub()
-
-  const closeTimeoutRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (closeTimeoutRef.current !== null) {
-        window.clearTimeout(closeTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  const cancelScheduledClose = () => {
-    if (closeTimeoutRef.current !== null) {
-      window.clearTimeout(closeTimeoutRef.current)
-      closeTimeoutRef.current = null
-    }
-  }
-
-  const scheduleClose = () => {
-    cancelScheduledClose()
-
-    closeTimeoutRef.current = window.setTimeout(() => {
-      if (open) {
-        close()
-      }
-
-      closeTimeoutRef.current = null
-    }, 200)
-  }
-
   const defaultContentClassName = collapsed
     ? [
         'absolute top-0 left-full z-10 ml-2 w-48 space-y-1',
@@ -178,15 +174,35 @@ function GroupContent({ label, collapsed, contentClassName, children }: GroupCon
     : defaultContentClassName
 
   return (
-    <Menu.SubContent
-      id={contentId}
-      onMouseEnter={collapsed ? cancelScheduledClose : undefined}
-      onMouseLeave={collapsed ? scheduleClose : undefined}
-      className={resolvedContentClassName}
-    >
-      {collapsed && <div className="px-2 py-1 text-xs font-semibold text-slate-900">{label}</div>}
+    <>
+      <button
+        ref={triggerRef as RefObject<HTMLButtonElement>}
+        type="button"
+        title={collapsed ? label : undefined}
+        aria-expanded={open}
+        aria-controls={contentId}
+        data-state={open ? 'open' : 'closed'}
+        data-active={active ? '' : undefined}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
+        className={triggerClassName ?? defaultTriggerClassName}
+      >
+        {icon && <span className={iconClassName}>{icon}</span>}
 
-      {children}
-    </Menu.SubContent>
+        {!collapsed && <span className="text-left">{label}</span>}
+      </button>
+
+      <Menu.SubContent
+        id={contentId}
+        onMouseEnter={collapsed ? cancelScheduledClose : undefined}
+        onMouseLeave={collapsed ? scheduleClose : undefined}
+        className={resolvedContentClassName}
+      >
+        {collapsed && <div className="px-2 py-1 text-xs font-semibold text-slate-900">{label}</div>}
+
+        {children}
+      </Menu.SubContent>
+    </>
   )
 }

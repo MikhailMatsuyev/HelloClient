@@ -37,8 +37,8 @@ Business layer
 
 ### 3. RouterMenu behavior
 
-- [ ] `Item` сам определяет active route
-- [ ] `Item` сам выполняет navigation через `Link`
+- [ *] `Item` сам определяет active route
+- [ *] `Item` сам выполняет navigation через `Link`
 - [ *] `Group` сам определяет active parent по дочерним routes
 - [ *] `Group` поддерживает accordion через headless API
 - [ *] Desktop collapsed flyout работает
@@ -52,11 +52,11 @@ Business layer
 
 ### 4. Business layer cleanup
 
-- [ ] `Sidebar.tsx` использует только `RouterMenu.*`
-- [ ] `Sidebar.tsx` не импортирует `headless-menu`
-- [ ] `Sidebar.tsx` не использует `useLocation`
-- [ ] `Sidebar.tsx` не управляет `openValue`
-- [ ] `Sidebar.tsx` не управляет collapsed-состоянием меню
+- [* ] `Sidebar.tsx` использует только `RouterMenu.*`
+- [* ] `Sidebar.tsx` не импортирует `headless-menu`
+- [* ] `Sidebar.tsx` не использует `useLocation`
+- [* ] `Sidebar.tsx` не управляет `openValue`
+- [ *] `Sidebar.tsx` не управляет collapsed-состоянием меню
 - [* ] `MobileNav.tsx` использует только `RouterMenu.*`
 - [* ] `MobileNav.tsx` не импортирует `headless-menu`
 - [* ] `MobileNav.tsx` не использует `useLocation`

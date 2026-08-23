@@ -18,9 +18,16 @@ import {
   TrendsIcon,
 } from './icons'
 
-export function MobileNav() {
+interface MobileNavProps {
+  openValue: string | null
+  setOpenValue: (value: string | null) => void
+}
+
+export function MobileNav({ openValue, setOpenValue }: MobileNavProps) {
   return (
     <RouterMenuRoot
+      openValue={openValue}
+      onOpenValueChange={setOpenValue}
       aria-label="Мобильная навигация"
       className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white md:hidden"
     >
@@ -31,13 +38,13 @@ export function MobileNav() {
 
         <MobileItem to={ROUTES.payments} icon={<PaymentsIcon />} label="Payments" />
 
-        <MobileGroup label="Clients" icon={<ClientsIcon />}>
+        <MobileGroup value="clients" label="Clients" icon={<ClientsIcon />}>
           <MobileSubItem to={ROUTES.clientsList} label="List" />
           <MobileSubItem to={ROUTES.clientsReviews} label="Reviews" />
           <MobileSubItem to={ROUTES.clientsNotifications} label="Notifications" />
         </MobileGroup>
 
-        <MobileGroup label="Inventory" icon={<InventoryIcon />}>
+        <MobileGroup value="inventory" label="Inventory" icon={<InventoryIcon />}>
           <MobileSubItem to={ROUTES.inventoryProducts} label="Products" />
           <MobileSubItem to={ROUTES.inventoryOrders} label="Orders" />
           <MobileSubItem to={ROUTES.inventorySuppliers} label="Suppliers" />
@@ -67,14 +74,16 @@ function MobileItem({ to, icon, label }: MobileItemProps) {
 }
 
 interface MobileGroupProps {
+  value: string
   label: string
   icon: ReactNode
   children: ReactNode
 }
 
-function MobileGroup({ label, icon, children }: MobileGroupProps) {
+function MobileGroup({ value, label, icon, children }: MobileGroupProps) {
   return (
     <RouterMenuGroup
+      value={value}
       label={label}
       icon={icon}
       className="contents"
