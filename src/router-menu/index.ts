@@ -3,6 +3,7 @@ export { Item } from './Item'
 export { Group } from './Group'
 export { List } from './List'
 export { Toggle } from './Toggle'
+export { useRouterMenuSub } from './context'
 
 export type { RouterMenuRootProps } from './Root'
 export type { RouterMenuItemProps } from './Item'

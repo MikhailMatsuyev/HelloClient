@@ -57,10 +57,10 @@ Business layer
 - [ ] `Sidebar.tsx` не использует `useLocation`
 - [ ] `Sidebar.tsx` не управляет `openValue`
 - [ ] `Sidebar.tsx` не управляет collapsed-состоянием меню
-- [ ] `MobileNav.tsx` использует только `RouterMenu.*`
-- [ ] `MobileNav.tsx` не импортирует `headless-menu`
-- [ ] `MobileNav.tsx` не использует `useLocation`
-- [ ] `MobileNav.tsx` не управляет `openValue`
+- [* ] `MobileNav.tsx` использует только `RouterMenu.*`
+- [* ] `MobileNav.tsx` не импортирует `headless-menu`
+- [* ] `MobileNav.tsx` не использует `useLocation`
+- [* ] `MobileNav.tsx` не управляет `openValue`
 
 ### 5. Tests
 

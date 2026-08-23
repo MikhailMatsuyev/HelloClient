@@ -1,12 +1,12 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 import {
   Group as RouterMenuGroup,
   Item as RouterMenuItem,
   List as RouterMenuList,
   Root as RouterMenuRoot,
+  useRouterMenuSub,
 } from '../router-menu'
-import { useMenuSub } from '../headless-menu'
 import { ROUTES } from './routes'
 import {
   ClientsIcon,
@@ -19,12 +19,8 @@ import {
 } from './icons'
 
 export function MobileNav() {
-  const [openValue, setOpenValue] = useState<string | null>(null)
-
   return (
     <RouterMenuRoot
-      openValue={openValue}
-      onOpenValueChange={setOpenValue}
       aria-label="Мобильная навигация"
       className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white md:hidden"
     >
@@ -95,7 +91,7 @@ function MobileSheet({ label, children }: { label: string; children: ReactNode }
     <>
       <MobileSheetBackdrop />
 
-      <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-slate-200 bg-white shadow-2xl transition-transform duration-200">
+      <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-slate-200 bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <span className="text-sm font-semibold text-slate-900">{label}</span>
 
@@ -109,7 +105,7 @@ function MobileSheet({ label, children }: { label: string; children: ReactNode }
 }
 
 function MobileSheetBackdrop() {
-  const { close } = useMenuSub()
+  const { close } = useRouterMenuSub()
 
   return (
     <div
@@ -121,7 +117,7 @@ function MobileSheetBackdrop() {
 }
 
 function MobileSheetCloseButton() {
-  const { close } = useMenuSub()
+  const { close } = useRouterMenuSub()
 
   return (
     <button
