@@ -4,7 +4,7 @@ src/router-menu/Item.tsx — ✅ сделано
 src/router-menu/Group.tsx — ✅ сделано
 Уже есть icon, определение active по дочерним routes.
 src/router-menu/List.tsx — ✅ сделано
-src/router-menu/Toggle.tsx — ❌ нет
+src/router-menu/Toggle.tsx — ✅ сделано
 src/router-menu/Root.tsx — ✅ сделано
 Интеграция с useLocation() уже есть.
 src/demo/Sidebar.tsx — 🟡 частично
