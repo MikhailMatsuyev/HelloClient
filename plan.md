@@ -41,9 +41,9 @@ Business layer
 - [ ] `Item` сам выполняет navigation через `Link`
 - [ *] `Group` сам определяет active parent по дочерним routes
 - [ *] `Group` поддерживает accordion через headless API
-- [ ] Desktop collapsed flyout работает
-- [ ] Hover intent и delayed close работают
-- [ ] Переход курсора с trigger на flyout не закрывает меню
+- [ *] Desktop collapsed flyout работает
+- [ *] Hover intent и delayed close работают
+- [ *] Переход курсора с trigger на flyout не закрывает меню
 - [ ] `Escape` закрывает группу и возвращает focus
 - [ ] Mobile bottom-sheet работает
 - [ ] Backdrop закрывает sheet

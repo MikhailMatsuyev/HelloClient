@@ -27,10 +27,8 @@ export interface RouterMenuGroupProps {
 export function Group({ label, children, icon, className }: RouterMenuGroupProps) {
   const { pathname } = useRouterMenuContext('Group')
   const { collapsed } = useSidebarMenuRootContext('Group')
-  const { open, openThis, toggle, triggerRef, contentId } = useMenuSub()
 
   const value = useId()
-  const closeTimeoutRef = useRef<number | null>(null)
 
   const childRoutes = Children.toArray(children)
     .filter(isValidElement)
@@ -38,6 +36,85 @@ export function Group({ label, children, icon, className }: RouterMenuGroupProps
     .filter((to): to is string => Boolean(to))
 
   const active = childRoutes.some((to) => pathname === to || pathname.startsWith(`${to}/`))
+
+  return (
+    <Menu.Sub value={value} className={className}>
+      <GroupTrigger label={label} icon={icon} collapsed={collapsed} active={active} />
+
+      <GroupContent label={label} collapsed={collapsed}>
+        {children}
+      </GroupContent>
+    </Menu.Sub>
+  )
+}
+
+interface GroupTriggerProps {
+  label: string
+  icon?: ReactNode
+  collapsed: boolean
+  active: boolean
+}
+
+function GroupTrigger({ label, icon, collapsed, active }: GroupTriggerProps) {
+  const { open, openThis, toggle, triggerRef, contentId } = useMenuSub()
+
+  const handleMouseEnter = () => {
+    if (collapsed) {
+      openThis()
+    }
+  }
+
+  const handleClick = () => {
+    if (collapsed) {
+      openThis()
+      return
+    }
+
+    toggle()
+  }
+
+  const triggerClassName = [
+    'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm',
+    'hover:bg-slate-100',
+    active
+      ? 'bg-blue-50 font-medium text-blue-600'
+      : open
+        ? 'bg-blue-50 text-blue-600'
+        : 'text-slate-600',
+  ].join(' ')
+
+  const iconClassName = active || open ? 'shrink-0 text-blue-600' : 'shrink-0 text-slate-500'
+
+  return (
+    <button
+      ref={triggerRef as RefObject<HTMLButtonElement>}
+      type="button"
+      title={collapsed ? label : undefined}
+      aria-expanded={open}
+      aria-controls={contentId}
+      data-state={open ? 'open' : 'closed'}
+      data-active={active ? '' : undefined}
+      onMouseEnter={handleMouseEnter}
+      onClick={handleClick}
+      className={triggerClassName}
+    >
+      {icon && <span className={iconClassName}>{icon}</span>}
+
+      {!collapsed && <span className="text-left">{label}</span>}
+    </button>
+  )
+}
+
+interface GroupContentProps {
+  label: string
+  collapsed: boolean
+  children: ReactNode
+}
+
+function GroupContent({ label, collapsed, children }: GroupContentProps) {
+  const { open, close, contentId } = useMenuSub()
+
+  const closeTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
     return () => {
@@ -59,57 +136,32 @@ export function Group({ label, children, icon, className }: RouterMenuGroupProps
 
     closeTimeoutRef.current = window.setTimeout(() => {
       if (open) {
-        toggle()
+        close()
       }
+
       closeTimeoutRef.current = null
     }, 200)
   }
 
+  const contentClassName = collapsed
+    ? [
+        'absolute top-0 left-full z-10 ml-2 w-48 space-y-1',
+        'rounded-lg border border-slate-200 bg-white p-2 shadow-lg',
+        open ? 'visible opacity-100' : 'invisible opacity-0',
+        'transition',
+      ].join(' ')
+    : ['ml-4 space-y-1 border-l border-slate-200 pl-3', open ? 'mt-1' : 'hidden'].join(' ')
+
   return (
-    <Menu.Sub value={value} className={className}>
-      <button
-        ref={triggerRef as RefObject<HTMLButtonElement>}
-        type="button"
-        title={collapsed ? label : undefined}
-        aria-expanded={open}
-        aria-controls={contentId}
-        data-state={open ? 'open' : 'closed'}
-        data-active={active ? '' : undefined}
-        onMouseEnter={
-          collapsed
-            ? () => {
-                cancelScheduledClose()
-                openThis()
-              }
-            : undefined
-        }
-        onMouseLeave={collapsed ? scheduleClose : undefined}
-        onClick={collapsed ? openThis : toggle}
-        className="group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100 data-[active]:bg-blue-50 data-[active]:font-medium data-[active]:text-blue-600 data-[state=open]:bg-blue-50 data-[state=open]:text-blue-600"
-      >
-        {icon && (
-          <span className="shrink-0 text-slate-500 group-data-[active]:text-blue-600 group-data-[state=open]:text-blue-600">
-            {icon}
-          </span>
-        )}
+    <Menu.SubContent
+      id={contentId}
+      onMouseEnter={collapsed ? cancelScheduledClose : undefined}
+      onMouseLeave={collapsed ? scheduleClose : undefined}
+      className={contentClassName}
+    >
+      {collapsed && <div className="px-2 py-1 text-xs font-semibold text-slate-900">{label}</div>}
 
-        {!collapsed && <span className="text-left">{label}</span>}
-      </button>
-
-      <Menu.SubContent
-        id={contentId}
-        onMouseEnter={collapsed ? cancelScheduledClose : undefined}
-        onMouseLeave={collapsed ? scheduleClose : undefined}
-        className={
-          collapsed
-            ? 'invisible absolute top-0 left-full z-10 ml-2 w-48 space-y-1 rounded-lg border border-slate-200 bg-white p-2 opacity-0 shadow-lg transition data-[state=open]:visible data-[state=open]:opacity-100'
-            : 'ml-4 hidden space-y-1 border-l border-slate-200 pl-3 data-[state=open]:mt-1 data-[state=open]:block'
-        }
-      >
-        {collapsed && <div className="px-2 py-1 text-xs font-semibold text-slate-900">{label}</div>}
-
-        {children}
-      </Menu.SubContent>
-    </Menu.Sub>
+      {children}
+    </Menu.SubContent>
   )
 }
