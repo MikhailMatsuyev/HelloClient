@@ -1,5 +1,7 @@
 import {
   Root as RouterMenuRoot,
+  List as RouterMenuList,
+  Toggle as RouterMenuToggle,
   Item as RouterMenuItem,
   Group as RouterMenuGroup,
 } from '../router-menu'
@@ -39,7 +41,7 @@ export function Sidebar({ collapsed, setCollapsed, openValue, setOpenValue }: Si
         </span>
       </div>
 
-      <div className="flex-1 space-y-1 px-2 py-3">
+      <RouterMenuList>
         <RouterMenuItem
           to={ROUTES.trends}
           label="Trends"
@@ -79,16 +81,14 @@ export function Sidebar({ collapsed, setCollapsed, openValue, setOpenValue }: Si
           icon={<SettingsIcon />}
           collapsed={collapsed}
         />
-      </div>
+      </RouterMenuList>
 
-      <button
-        type="button"
+      <RouterMenuToggle
         className="m-2 flex w-fit items-center justify-center self-start rounded-md border border-slate-300 p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
         aria-label={collapsed ? 'Развернуть меню' : 'Свернуть меню'}
-        onClick={() => setCollapsed(!collapsed)}
       >
         <CollapseIcon className={`h-5 w-5 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
-      </button>
+      </RouterMenuToggle>
     </RouterMenuRoot>
   )
 }
