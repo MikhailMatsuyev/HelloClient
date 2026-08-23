@@ -9,6 +9,6 @@ src/router-menu/Root.tsx — ✅ сделано
 Интеграция с useLocation() уже есть.
 src/demo/Sidebar.tsx — ✅ сделано
 Уже использует RouterMenu, но collapsed/openValue и кнопка collapse всё ещё находятся здесь.
-src/demo/MobileNav.tsx — ❌ ещё не переделан
+src/demo/MobileNav.tsx — ✅ сделано
 Всё ещё напрямую использует Menu, useLocation, useMenuSub.
 Tests — ❌ финальные тесты RouterMenu ещё не сделаны.

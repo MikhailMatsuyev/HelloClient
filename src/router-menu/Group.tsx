@@ -12,9 +12,18 @@ export interface RouterMenuGroupProps {
   children: ReactNode
   icon?: ReactNode
   className?: string
+  triggerClassName?: string
+  contentClassName?: string
 }
 
-export function Group({ label, children, icon, className }: RouterMenuGroupProps) {
+export function Group({
+  label,
+  children,
+  icon,
+  className,
+  triggerClassName,
+  contentClassName,
+}: RouterMenuGroupProps) {
   const { pathname } = useRouterMenuContext('Group')
   const value = useId()
 
@@ -27,13 +36,12 @@ export function Group({ label, children, icon, className }: RouterMenuGroupProps
 
   return (
     <Menu.Sub value={value} className={className}>
-      <Menu.SubTrigger data-active={active ? '' : undefined}>
+      <Menu.SubTrigger data-active={active ? '' : undefined} className={triggerClassName}>
         {icon && <span className="shrink-0">{icon}</span>}
-
         <span>{label}</span>
       </Menu.SubTrigger>
 
-      <Menu.SubContent>{children}</Menu.SubContent>
+      <Menu.SubContent className={contentClassName}>{children}</Menu.SubContent>
     </Menu.Sub>
   )
 }
