@@ -1,6 +1,12 @@
-import { Link, useLocation } from 'react-router-dom'
-import type { ReactNode } from 'react'
-import { Menu, useMenuSub } from '../headless-menu'
+import { useState, type ReactNode } from 'react'
+
+import {
+  Group as RouterMenuGroup,
+  Item as RouterMenuItem,
+  List as RouterMenuList,
+  Root as RouterMenuRoot,
+} from '../router-menu'
+import { useMenuSub } from '../headless-menu'
 import { ROUTES } from './routes'
 import {
   ClientsIcon,
@@ -12,103 +18,99 @@ import {
   TrendsIcon,
 } from './icons'
 
-interface MobileNavProps {
-  openValue: string | null
-  setOpenValue: (value: string | null) => void
-}
+export function MobileNav() {
+  const [openValue, setOpenValue] = useState<string | null>(null)
 
-/**
- * Мобильный вариант того же headless-меню: нижний таб-бар вместо боковой колонки, подменю —
- * bottom-sheet с оверлеем вместо flyout (см. "Сверка с Notion" в CLAUDE.md). Отдельный
- * Menu.Root от десктопного Sidebar — у мобильной раскладки нет понятия collapsed/expanded.
- */
-export function MobileNav({ openValue, setOpenValue }: MobileNavProps) {
   return (
-    <Menu.Root
+    <RouterMenuRoot
       openValue={openValue}
       onOpenValueChange={setOpenValue}
       aria-label="Мобильная навигация"
       className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white md:hidden"
     >
-      <Menu.List className="flex items-stretch justify-around">
-        <MobileLink to={ROUTES.trends} icon={<TrendsIcon />} label="Trends" />
-        <MobileLink to={ROUTES.tasks} icon={<TasksIcon />} label="Tasks" />
-        <MobileLink to={ROUTES.payments} icon={<PaymentsIcon />} label="Payments" />
+      <RouterMenuList className="flex items-stretch justify-around">
+        <MobileItem to={ROUTES.trends} icon={<TrendsIcon />} label="Trends" />
 
-        <MobileSubmenu value="clients" icon={<ClientsIcon />} label="Clients">
-          <MobileSubLink to={ROUTES.clientsList} label="List" />
-          <MobileSubLink to={ROUTES.clientsReviews} label="Reviews" />
-          <MobileSubLink to={ROUTES.clientsNotifications} label="Notifications" />
-        </MobileSubmenu>
+        <MobileItem to={ROUTES.tasks} icon={<TasksIcon />} label="Tasks" />
 
-        <MobileSubmenu value="inventory" icon={<InventoryIcon />} label="Inventory">
-          <MobileSubLink to={ROUTES.inventoryProducts} label="Products" />
-          <MobileSubLink to={ROUTES.inventoryOrders} label="Orders" />
-          <MobileSubLink to={ROUTES.inventorySuppliers} label="Suppliers" />
-        </MobileSubmenu>
+        <MobileItem to={ROUTES.payments} icon={<PaymentsIcon />} label="Payments" />
 
-        <MobileLink to={ROUTES.settings} icon={<SettingsIcon />} label="Settings" />
-      </Menu.List>
-    </Menu.Root>
+        <MobileGroup label="Clients" icon={<ClientsIcon />}>
+          <MobileSubItem to={ROUTES.clientsList} label="List" />
+          <MobileSubItem to={ROUTES.clientsReviews} label="Reviews" />
+          <MobileSubItem to={ROUTES.clientsNotifications} label="Notifications" />
+        </MobileGroup>
+
+        <MobileGroup label="Inventory" icon={<InventoryIcon />}>
+          <MobileSubItem to={ROUTES.inventoryProducts} label="Products" />
+          <MobileSubItem to={ROUTES.inventoryOrders} label="Orders" />
+          <MobileSubItem to={ROUTES.inventorySuppliers} label="Suppliers" />
+        </MobileGroup>
+
+        <MobileItem to={ROUTES.settings} icon={<SettingsIcon />} label="Settings" />
+      </RouterMenuList>
+    </RouterMenuRoot>
   )
 }
 
-interface MobileLinkProps {
+interface MobileItemProps {
   to: string
   icon: ReactNode
   label: string
 }
 
-function MobileLink({ to, icon, label }: MobileLinkProps) {
-  const { pathname } = useLocation()
-  const active = pathname === to
-
+function MobileItem({ to, icon, label }: MobileItemProps) {
   return (
-    <Menu.Item
-      asChild
-      active={active}
+    <RouterMenuItem
+      to={to}
+      label={label}
+      icon={icon}
       className="flex flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[11px] text-slate-500 data-[active]:text-blue-600"
-    >
-      <Link to={to}>
-        <span className="h-5 w-5">{icon}</span>
-        <span>{label}</span>
-      </Link>
-    </Menu.Item>
+    />
   )
 }
 
-interface MobileSubmenuProps {
-  value: string
-  icon: ReactNode
+interface MobileGroupProps {
   label: string
+  icon: ReactNode
   children: ReactNode
 }
 
-function MobileSubmenu({ value, icon, label, children }: MobileSubmenuProps) {
+function MobileGroup({ label, icon, children }: MobileGroupProps) {
   return (
-    <Menu.Sub value={value} className="contents">
-      <Menu.SubTrigger className="flex flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[11px] text-slate-500 data-[state=open]:text-blue-600">
-        <span className="h-5 w-5">{icon}</span>
-        <span>{label}</span>
-      </Menu.SubTrigger>
-
-      <Menu.SubContent className="group/sheet invisible fixed inset-0 z-30 data-[state=open]:visible">
-        <MobileSheetBackdrop />
-        <div className="absolute inset-x-0 bottom-0 translate-y-full rounded-t-2xl border-t border-slate-200 bg-white shadow-2xl transition-transform duration-200 group-data-[state=open]/sheet:translate-y-0">
-          <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-            <span className="text-sm font-semibold text-slate-900">{label}</span>
-            <MobileSheetCloseButton />
-          </div>
-          <div className="space-y-1 p-2 pb-6">{children}</div>
-        </div>
-      </Menu.SubContent>
-    </Menu.Sub>
+    <RouterMenuGroup
+      label={label}
+      icon={icon}
+      className="contents"
+      triggerClassName="flex flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[11px] text-slate-500 data-[state=open]:text-blue-600"
+      contentClassName="fixed inset-0 z-30 bg-transparent"
+    >
+      <MobileSheet label={label}>{children}</MobileSheet>
+    </RouterMenuGroup>
   )
 }
 
-/** Клик по затемнённому фону закрывает bottom-sheet — используем useMenuSub, т.к. это не триггер. */
+function MobileSheet({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <>
+      <MobileSheetBackdrop />
+
+      <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-slate-200 bg-white shadow-2xl transition-transform duration-200">
+        <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+          <span className="text-sm font-semibold text-slate-900">{label}</span>
+
+          <MobileSheetCloseButton />
+        </div>
+
+        <div className="space-y-1 p-2 pb-6">{children}</div>
+      </div>
+    </>
+  )
+}
+
 function MobileSheetBackdrop() {
   const { close } = useMenuSub()
+
   return (
     <div
       data-testid="sheet-backdrop"
@@ -118,9 +120,9 @@ function MobileSheetBackdrop() {
   )
 }
 
-/** Кнопка "×" в шапке bottom-sheet — ровно то, для чего задуман публичный хук useMenuSub. */
 function MobileSheetCloseButton() {
   const { close } = useMenuSub()
+
   return (
     <button
       type="button"
@@ -133,17 +135,12 @@ function MobileSheetCloseButton() {
   )
 }
 
-function MobileSubLink({ to, label }: { to: string; label: string }) {
-  const { pathname } = useLocation()
-  const active = pathname === to
-
+function MobileSubItem({ to, label }: { to: string; label: string }) {
   return (
-    <Menu.Item
-      asChild
-      active={active}
+    <RouterMenuItem
+      to={to}
+      label={label}
       className="block rounded-lg px-3 py-2 text-sm text-slate-600 data-[active]:bg-blue-50 data-[active]:font-medium data-[active]:text-blue-600"
-    >
-      <Link to={to}>{label}</Link>
-    </Menu.Item>
+    />
   )
 }
